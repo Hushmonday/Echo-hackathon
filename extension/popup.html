@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Echo</title>
+    <style>body{font-family:Arial;padding:12px}button{padding:8px 12px}</style>
+  </head>
+  <body>
+    <h3>Echo — Quick Recorder</h3>
+    <p>This is a demo extension popup. For the full experience, open the web app.</p>
+    <button id="open">Open Web App</button>
+    <hr />
+    <div>
+      <button id="writer-demo">Writer API Demo</button>
+      <button id="summarizer-demo" style="margin-left:8px">Summarizer API Demo</button>
+    </div>
+    <div id="ai-result" style="margin-top:12px;white-space:pre-wrap"></div>
+    <script>
+      document.getElementById('open').addEventListener('click', () => {
+        chrome.tabs.create({ url: 'http://localhost:3000' })
+      })
+
+      document.getElementById('writer-demo').addEventListener('click', async () => {
+        const resultDiv = document.getElementById('ai-result');
+        resultDiv.textContent = 'Calling Writer API...';
+        if (chrome.ai && chrome.ai.write) {
+          try {
+            const resp = await chrome.ai.write({
+              model: 'writer',
+              input: 'Generate a meeting action plan for: Discuss project milestones and assign tasks.'
+            });
+            resultDiv.textContent = 'Writer result:\n' + (resp.output || JSON.stringify(resp));
+          } catch (e) {
+            resultDiv.textContent = 'Error: ' + e.message;
+          }
+        } else {
+          resultDiv.textContent = 'chrome.ai.write is not available in this browser.';
+        }
+      });
+
+      document.getElementById('summarizer-demo').addEventListener('click', async () => {
+        const resultDiv = document.getElementById('ai-result');
+        resultDiv.textContent = 'Calling Summarizer API...';
+        if (chrome.ai && chrome.ai.summarize) {
+          try {
+            const resp = await chrome.ai.summarize({
+              model: 'summarizer',
+              input: 'Project kickoff meeting transcript: Discussed goals, assigned tasks, set deadlines.',
+              options: { type: 'key-points', format: 'markdown', maxTokens: 400 }
+            });
+            resultDiv.textContent = 'Summarizer result:\n' + (resp.output || JSON.stringify(resp));
+          } catch (e) {
+            resultDiv.textContent = 'Error: ' + e.message;
+          }
+        } else {
+          resultDiv.textContent = 'chrome.ai.summarize is not available in this browser.';
+        }
+      });
+    </script>
+  </body>
+</html>

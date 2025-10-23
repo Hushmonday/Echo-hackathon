@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+python-dotenv
+# Optional (example) Google Cloud libraries - uncomment if integrating with GCP
+# google-cloud-speech
+# google-cloud-storage
+reportlab
