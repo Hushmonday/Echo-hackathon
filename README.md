@@ -190,116 +190,62 @@ Request body: { payload }
 - Security: TLS, encrypted storage, minimal retention
 - Privacy: consent before recording; data deletion support
 
-## 12. Metrics / KPIs
+# Echo-hackathon
 
-- DAU/WAU, session completion rate, median time from recording to summary, export/integration conversion, QA success rate, D7/D30 retention
-- Note satisfaction (1–5 stars)
+## What is Echo?
+Echo is a productivity tool for meetings, classes, and interviews. It helps you:
+- Record audio and convert it to text (speech-to-text)
+- Generate smart notes, summaries, and action items using AI
+- Translate notes between English and Chinese
+- Export notes to PDF, Word, Notion, Google Docs, Jira, Trello
+- Use Chrome's built-in AI (Writer, Summarizer, Translator) if available, or fallback to backend AI
 
-## 13. Milestones
+## Main Features
+- Real-time or uploaded audio recording
+- Automatic transcription (STT)
+- AI-powered note generation (outline, summary, Q&A, action items)
+- Multi-language translation
+- One-click export and integration
 
-- W1: project scaffold (Web + Ext + backend), recording & upload, STT pipeline
-- W2: transcript aggregation, summarizer-based structured notes, translation, PDF/Word export
-- W3: three templates polishing, action item structuring & Notion/Docs integration
-- W4: RAG-lite QA, accessibility & polish, 3-minute demo video + Devpost submission
+## Quick Start (Local Development)
+1. **Start the backend (FastAPI):**
+	```powershell
+	cd server
+	.\.venv\Scripts\Activate.ps1
+	pip install -r requirements.txt
+	uvicorn main:app --reload --port 8000
+	```
+2. **Start the web app (Next.js):**
+	```powershell
+	cd web
+	npm install
+	npm run dev
+	```
+3. **Load the Chrome extension:**
+	- Go to `chrome://extensions` → Enable Developer mode → Load unpacked → select `extension` folder.
 
-## 14. Risks & Mitigations
+## Chrome AI API Usage
+- If your Chrome supports built-in AI, you can use `chrome.ai.write`, `chrome.ai.summarize`, and `chrome.ai.translate` directly in the extension or web app.
+- If not available, the app will fallback to backend AI endpoints.
+- To check if available, open DevTools Console and enter:
+  ```javascript
+  window.chrome.ai
+  ```
+- If it returns `undefined`, the API is not yet available in your browser.
 
-- STT cost/latency: prefer high-ROI cloud STT for MVP; keep WASM as demo fallback
-- Built-in AI availability: detect availability() and fallback to Google AI endpoints or server LLMs
-- Long audio memory: chunk uploads & chunked summarization
+## Backend AI Fallback
+- The backend (FastAPI) provides endpoints for summarization, writing, translation, and export using server-side AI (Google Cloud, PaLM, Gemini, etc.).
+- You can extend the backend to use your own AI provider if needed.
 
-## 15. 3-minute Demo Script
+## Export & Integration
+- Export notes and transcripts to PDF, Word, Notion, Google Docs, Jira, Trello.
+- PDF export is implemented using ReportLab and served from `/exports`.
 
-1) Open extension; Start Recording (Class) — show live captions
-2) Stop → show transcript; click segment to play
-3) Click "Generate Class Notes" → show outline, knowledge points, examples
-4) Upload meeting audio → generate meeting notes + action items → push one to Trello
-5) Ask: "What are today's conclusions?" → return answer with timestamped citation
-6) Click Translate → English notes become Chinese → Export PDF
+## Contributing
+Feel free to fork, submit issues, or open pull requests!
 
-## Examples & Implementation Notes
-
-1) MV3 manifest (skeleton)
-
-manifest.json (Manifest V3 skeleton):
-
-{
-	"manifest_version": 3,
-	"name": "Echo — AI Notes",
-	"version": "0.1.0",
-	"permissions": ["storage", "activeTab", "scripting", "tabs", "notifications", "microphone"],
-	"host_permissions": ["*://*/*"],
-	"background": { "service_worker": "dist/background.js" },
-	"action": { "default_popup": "popup.html", "default_icon": "icons/icon.png" }
-}
-
-2) Recording & STT options
-
-- Browser Web Speech API (simple demo, limited browser support)
-- MediaRecorder capture then upload slices to cloud STT (recommended)
-- WASM Whisper tiny in a WebWorker/AudioWorklet for offline demo
-
-3) Example: calling Chrome Built-in Summarizer / Writer / Translator
-
-Note: The exact client call pattern will follow the competition's Chrome Built-in AI documentation. Below is a pseudocode sketch.
-
-// Pseudocode: use Summarizer to convert transcript to keypoints
-const response = await chrome.ai.summarize({
-	model: 'summarizer',
+## Contact
+For questions or collaboration, open an issue or contact the repo owner.
 	input: transcriptText,
+
 	options: { type: 'key-points', format: 'markdown', maxTokens: 800 }
-});
-
-// Pseudocode: translate a markdown note
-const tr = await chrome.ai.translate({ model: 'translator', input: noteMd, target: 'zh' });
-
-// If built-in APIs are unavailable, fallback to Google AI endpoints (or other LLM providers)
-
-4) Fallback: Google AI / PaLM endpoints
-
-When Built-in AI isn't available, call Google AI or PaLM endpoints from backend with proper keys. Keep secrets on server-side and not in the extension.
-
-Example flow: generate structured note via backend PaLM call
-
-POST /api/ai/summarize
-Request: { transcriptText, mode }
-Server: use Google AI client to call PaLM/Model.generate with a prompt template matching mode
-
-5) STT Integration examples
-
-- Cloud STT (Google Cloud Speech-to-Text): client uploads audio to backend → backend calls Speech-to-Text longRunningRecognize or streamingRecognize
-- Web Speech API: navigator.mediaDevices.getUserMedia + SpeechRecognition (on supported browsers)
-- WASM Whisper: run inference in a WebWorker; suitable only for short-demo audio due to model size/perf
-
-## How to Run (dev)
-
-- Web App (Next.js)
-	- Install dependencies: npm install
-	- Dev server: npm run dev
-
-- Chrome Extension
-	- Build extension: npm run build:ext
-	- Load unpacked extension in chrome://extensions → Load unpacked → select dist/
-
-## Notes on Competition Requirements
-
-- Use Chrome Built-in AI (Summarizer/Writer/Translator) for core features where possible.
-- Provide clear fallback to Google AI/PaLM when built-in is unavailable. Keep API keys on server side and ensure the Manifest & privacy wording explain what data is sent to external services.
-
-## Next Steps (implementation suggestions)
-
-1) Scaffold Next.js app + MV3 extension shell that shares UI components
-2) Implement MediaRecorder + upload pipeline
-3) Integrate cloud STT for stable transcription
-4) Call Built-in Summarizer for structured notes; add backend PaLM fallback
-5) Add exports (PDF/docx) and Notion/Google Docs connectors
-
----
-
-If you want, I can:
-- Add example Next.js + MV3 starter files (recorder, background worker, manifest) ready to run
-- Create a small backend example (FastAPI) with endpoints for uploads, STT orchestration, and PaLM fallback
-- Add unit smoke tests and a 3-minute demo script in a README-friendly checklist
-
-Tell me which of these you'd like me to implement next and I'll create a todo and start coding.
-
